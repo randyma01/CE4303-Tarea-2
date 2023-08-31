@@ -4,14 +4,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 
 // Function to send a file to the server
 void sendFile(FILE *file, int socket)
 {
-    char buffer[8192]; // A reasonably sized buffer for file transfer
+    char buffer[1024];
     size_t bytesRead;
-
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0)
     {
         if (send(socket, buffer, bytesRead, 0) == -1)
@@ -57,10 +55,9 @@ int main()
 
     // Loop to send files to the server
     char filePath[1024];
-
     while (true)
     {
-        printf("Enter the path of the file to send (or type 'exit' to quit): ");
+        printf("Enter the path of the image file to send (or type 'exit' to quit): ");
         fgets(filePath, sizeof(filePath), stdin);
 
         // Remove the newline character at the end of the file path

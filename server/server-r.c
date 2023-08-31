@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 // Function to receive a file from the client and save it
 void receiveFile(int socket)
 {
-    char buffer[8192]; // A reasonably sized buffer for file transfer
+    char buffer[1024];
     ssize_t bytesRead;
     char filePath[1024];
 
@@ -22,8 +24,24 @@ void receiveFile(int socket)
 
     filePath[bytesRead] = '\0';
 
-    // Create and open the file
-    FILE *file = fopen(filePath, "wb");
+    // Check if the user wants to exit
+    if (strcasecmp(filePath, "exit") == 0)
+    {
+        return; // Exit the function, no need to create the 'imgs' folder
+    }
+
+    // Create the 'imgs' folder if it doesn't exist
+    struct stat st = {0};
+    if (stat("imgs", &st) == -1)
+    {
+        mkdir("imgs", 0700);
+    }
+
+    // Create and open the file in the "imgs" directory
+    char imgPath[2048]; // Increased buffer size
+    snprintf(imgPath, sizeof(imgPath), "imgs/%s", filePath);
+
+    FILE *file = fopen(imgPath, "wb");
     if (!file)
     {
         perror("Error creating file");
