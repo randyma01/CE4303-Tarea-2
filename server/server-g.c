@@ -3,11 +3,31 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+
+#define MAX_FILENAME_LEN 256
+#define MAX_PATH_LEN 256
+
+// Función para crear la carpeta "processed images" si no existe
+void createProcessedImagesFolder()
+{
+    struct stat st = {0};
+    if (stat("processed images", &st) == -1)
+    {
+        if (mkdir("processed images", 0777) != 0)
+        {
+            perror("Error al crear la carpeta 'processed images'");
+            exit(1);
+        }
+    }
+}
 
 int main()
 {
     // Configurar el puerto en el que el servidor escuchará conexiones
-    int server_port = 12345; // Puedes cambiar esto al puerto que desees
+    int server_port = 1717; // Cambia esto al puerto que desees
+
+    createProcessedImagesFolder();
 
     // Crear un socket para el servidor
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -49,26 +69,43 @@ int main()
             exit(1);
         }
 
-        // Leer datos del cliente
-        char buffer[1024];
-        int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received == -1)
+        // Leer el nombre del archivo de imagen enviado por el cliente
+        char filename[MAX_FILENAME_LEN];
+        int filename_len = recv(client_socket, filename, sizeof(filename), 0);
+        if (filename_len == -1)
         {
-            perror("Error al recibir datos del cliente");
+            perror("Error al recibir el nombre del archivo");
             exit(1);
         }
 
-        // Terminar la cadena recibida
-        buffer[bytes_received] = '\0';
+        // Construir la ruta completa para guardar la imagen en "processed images"
+        char filepath[MAX_PATH_LEN];
+        snprintf(filepath, sizeof(filepath), "processed images/%s", filename);
 
-        // Mostrar los datos recibidos del cliente
-        printf("Mensaje del cliente: %s\n", buffer);
+        // Abrir un archivo para guardar la imagen recibida
+        FILE *file = fopen(filepath, "wb");
+        if (file == NULL)
+        {
+            perror("Error al abrir el archivo para escribir la imagen");
+            exit(1);
+        }
 
-        // Responder al cliente
-        char response[] = "Hola, cliente!";
+        // Recibir y guardar la imagen
+        char buffer[1024];
+        int bytes_received;
+        while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0)
+        {
+            fwrite(buffer, 1, bytes_received, file);
+        }
+
+        // Cerrar el archivo
+        fclose(file);
+
+        // Enviar una respuesta al cliente
+        char response[] = "Imagen recibida con éxito";
         if (send(client_socket, response, strlen(response), 0) == -1)
         {
-            perror("Error al enviar datos al cliente");
+            perror("Error al enviar respuesta al cliente");
             exit(1);
         }
 
