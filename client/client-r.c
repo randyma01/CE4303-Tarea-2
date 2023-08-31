@@ -53,8 +53,10 @@ int main()
 
     printf("Connected to server\n");
 
-    // Loop to send files to the server
     char filePath[1024];
+    char response[1024];
+    ssize_t bytes_received;
+
     while (true)
     {
         printf("Enter the path of the image file to send (or type 'exit' to quit): ");
@@ -70,6 +72,11 @@ int main()
         // Check if the user wants to exit
         if (strcasecmp(filePath, "exit") == 0)
         {
+            // Send 'exit' to the server to indicate termination
+            if (send(client_socket, "exit", 4, 0) == -1)
+            {
+                perror("Error sending 'exit'");
+            }
             break;
         }
 
@@ -97,8 +104,7 @@ int main()
         fclose(file);
 
         // Receive a response from the server
-        char response[1024];
-        ssize_t bytes_received = recv(client_socket, response, sizeof(response), 0);
+        bytes_received = recv(client_socket, response, sizeof(response), 0);
         if (bytes_received == -1)
         {
             perror("Error receiving response");

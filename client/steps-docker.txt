@@ -1,0 +1,32 @@
+
+
+>>> docker build -t my-client-image .
+>>> docker run -it my-client-image
+
+>>> docker run -it --network host my-client-image
+
+$$$ docker run -it --network host client-r-image
+
+# Use an official Python runtime as a parent image
+FROM ubuntu:latest
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages
+RUN apt-get update && apt-get install -y gcc make
+
+# Compile your C code (replace 'client.c' with your C code filename)
+RUN gcc client-r.c -o client
+
+# Make port 1717 available to the world outside this container
+EXPOSE 1717
+
+# Define environment variable
+ENV NAME client
+
+# Run your program when the container launches (replace './client' with your compiled binary)
+CMD ["./client"]

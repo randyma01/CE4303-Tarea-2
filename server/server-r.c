@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 // Function to receive a file from the client and save it
-void receiveFile(int socket)
+bool receiveFile(int socket)
 {
     char buffer[1024];
     ssize_t bytesRead;
@@ -19,7 +19,7 @@ void receiveFile(int socket)
     if (bytesRead == -1)
     {
         perror("Error receiving file name");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     filePath[bytesRead] = '\0';
@@ -27,14 +27,19 @@ void receiveFile(int socket)
     // Check if the user wants to exit
     if (strcasecmp(filePath, "exit") == 0)
     {
-        return; // Exit the function, no need to create the 'imgs' folder
+        return true; // Exit the function and indicate client to exit
     }
 
     // Create the 'imgs' folder if it doesn't exist
     struct stat st = {0};
     if (stat("imgs", &st) == -1)
     {
-        mkdir("imgs", 0700);
+        // La carpeta 'imgs' no existe, la creamos
+        if (mkdir("imgs", 0700) == -1)
+        {
+            perror("Error creating 'imgs' folder");
+            return false;
+        }
     }
 
     // Create and open the file in the "imgs" directory
@@ -45,7 +50,7 @@ void receiveFile(int socket)
     if (!file)
     {
         perror("Error creating file");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // Receive and write the file data
@@ -58,11 +63,13 @@ void receiveFile(int socket)
     {
         perror("Error receiving file data");
         fclose(file);
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     // Close the file
     fclose(file);
+
+    return true;
 }
 
 int main()
@@ -116,18 +123,27 @@ int main()
         printf("Client connected\n");
 
         // Receive and save the file from the client
-        receiveFile(client_socket);
-        printf("File received and saved\n");
+        bool success = receiveFile(client_socket);
 
         // Send a response back to the client
-        char response[] = "File received successfully";
-        if (send(client_socket, response, strlen(response), 0) == -1)
+        if (success)
         {
-            perror("Error sending response");
-            exit(EXIT_FAILURE);
+            char response[] = "File received successfully. You can send another image.";
+            if (send(client_socket, response, strlen(response), 0) == -1)
+            {
+                perror("Error sending response");
+                exit(EXIT_FAILURE);
+            }
         }
-
-        printf("Response sent to client\n");
+        else
+        {
+            char response[] = "Error receiving file. Please try again.";
+            if (send(client_socket, response, strlen(response), 0) == -1)
+            {
+                perror("Error sending response");
+                exit(EXIT_FAILURE);
+            }
+        }
 
         // Close the client socket
         close(client_socket);
