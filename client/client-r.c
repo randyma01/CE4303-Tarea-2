@@ -42,7 +42,7 @@ int main()
     char message[1024];
     while (true)
     {
-        printf("Enter a message to send to the server (or type 'exit' to quit): ");
+        printf("Enter a message to send to the server (or type 'Exit' or 'exit' to quit): ");
         fgets(message, sizeof(message), stdin);
 
         // Remove the newline character at the end of the message
