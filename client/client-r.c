@@ -4,6 +4,23 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+
+// Function to send a file to the server
+void sendFile(FILE *file, int socket)
+{
+    char buffer[8192]; // A reasonably sized buffer for file transfer
+    size_t bytesRead;
+
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0)
+    {
+        if (send(socket, buffer, bytesRead, 0) == -1)
+        {
+            perror("Error sending file");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 int main()
 {
@@ -38,34 +55,49 @@ int main()
 
     printf("Connected to server\n");
 
-    // Loop to send messages to the server
-    char message[1024];
+    // Loop to send files to the server
+    char filePath[1024];
+
     while (true)
     {
-        printf("Enter a message to send to the server (or type 'Exit' or 'exit' to quit): ");
-        fgets(message, sizeof(message), stdin);
+        printf("Enter the path of the file to send (or type 'exit' to quit): ");
+        fgets(filePath, sizeof(filePath), stdin);
 
-        // Remove the newline character at the end of the message
-        size_t len = strlen(message);
-        if (len > 0 && message[len - 1] == '\n')
+        // Remove the newline character at the end of the file path
+        size_t len = strlen(filePath);
+        if (len > 0 && filePath[len - 1] == '\n')
         {
-            message[len - 1] = '\0';
+            filePath[len - 1] = '\0';
         }
 
         // Check if the user wants to exit
-        if (strcasecmp(message, "exit") == 0)
+        if (strcasecmp(filePath, "exit") == 0)
         {
             break;
         }
 
-        // Send the message to the server
-        if (send(client_socket, message, strlen(message), 0) == -1)
+        // Open the file
+        FILE *file = fopen(filePath, "rb");
+        if (!file)
         {
-            perror("Error sending message");
-            exit(EXIT_FAILURE);
+            perror("Error opening file");
+            continue; // Skip to the next iteration if the file can't be opened
         }
 
-        printf("Message sent: %s\n", message);
+        // Send the file name to the server
+        if (send(client_socket, filePath, strlen(filePath), 0) == -1)
+        {
+            perror("Error sending file name");
+            fclose(file);
+            continue; // Skip to the next iteration
+        }
+
+        // Send the file data to the server
+        sendFile(file, client_socket);
+        printf("File sent: %s\n", filePath);
+
+        // Close the file
+        fclose(file);
 
         // Receive a response from the server
         char response[1024];

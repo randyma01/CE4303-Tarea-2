@@ -3,6 +3,49 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
+
+// Function to receive a file from the client and save it
+void receiveFile(int socket)
+{
+    char buffer[8192]; // A reasonably sized buffer for file transfer
+    ssize_t bytesRead;
+    char filePath[1024];
+
+    // Receive the file name from the client
+    bytesRead = recv(socket, filePath, sizeof(filePath), 0);
+    if (bytesRead == -1)
+    {
+        perror("Error receiving file name");
+        exit(EXIT_FAILURE);
+    }
+
+    filePath[bytesRead] = '\0';
+
+    // Create and open the file
+    FILE *file = fopen(filePath, "wb");
+    if (!file)
+    {
+        perror("Error creating file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Receive and write the file data
+    while ((bytesRead = recv(socket, buffer, sizeof(buffer), 0)) > 0)
+    {
+        fwrite(buffer, 1, bytesRead, file);
+    }
+
+    if (bytesRead == -1)
+    {
+        perror("Error receiving file data");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Close the file
+    fclose(file);
+}
 
 int main()
 {
@@ -42,52 +85,37 @@ int main()
     // Accept incoming connections
     struct sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
-    int client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_addr_len);
-    if (client_socket == -1)
-    {
-        perror("Error accepting connection");
-        exit(EXIT_FAILURE);
-    }
 
-    printf("Client connected\n");
-
-    // Loop to receive and respond to messages from the client
     while (1)
     {
-        char buffer[1024];
-        ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received == -1)
+        int client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_addr_len);
+        if (client_socket == -1)
         {
-            perror("Error receiving data");
+            perror("Error accepting connection");
             exit(EXIT_FAILURE);
         }
 
-        if (bytes_received == 0)
-        {
-            // Client has disconnected
-            printf("Client disconnected\n");
-            break;
-        }
+        printf("Client connected\n");
 
-        buffer[bytes_received] = '\0';
-        printf("Received message from client: %s\n", buffer);
+        // Receive and save the file from the client
+        receiveFile(client_socket);
+        printf("File received and saved\n");
 
         // Send a response back to the client
-        char response[2048]; // Increased buffer size
-        snprintf(response, sizeof(response), "Server received: %s", buffer);
+        char response[] = "File received successfully";
         if (send(client_socket, response, strlen(response), 0) == -1)
         {
             perror("Error sending response");
             exit(EXIT_FAILURE);
         }
 
-        printf("Response sent to client: %s\n", response);
+        printf("Response sent to client\n");
+
+        // Close the client socket
+        close(client_socket);
     }
 
-    // Close the client socket
-    close(client_socket);
-
-    // Close the server socket
+    // Close the server socket (never reached in this example)
     close(server_socket);
 
     return 0;
