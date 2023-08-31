@@ -3,117 +3,91 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/stat.h>
-
-#define MAX_FILENAME_LEN 256
-#define MAX_PATH_LEN 256
-
-// Función para crear la carpeta "processed images" si no existe
-void createProcessedImagesFolder()
-{
-    struct stat st = {0};
-    if (stat("processed images", &st) == -1)
-    {
-        if (mkdir("processed images", 0777) != 0)
-        {
-            perror("Error al crear la carpeta 'processed images'");
-            exit(1);
-        }
-    }
-}
 
 int main()
 {
-    // Configurar el puerto en el que el servidor escuchará conexiones
-    int server_port = 1717; // Cambia esto al puerto que desees
+    // Define the port on which the server will listen for incoming connections
+    int port = 1717; // Change 1717 to the port you want to use
 
-    createProcessedImagesFolder();
-
-    // Crear un socket para el servidor
+    // Create a socket
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1)
     {
-        perror("Error al crear el socket del servidor");
-        exit(1);
+        perror("Error creating socket");
+        exit(EXIT_FAILURE);
     }
 
-    // Configurar la estructura sockaddr_in para el servidor
+    // Set up the server address to bind the socket to
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
     server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(port);
 
-    // Vincular el socket a la dirección y el puerto
+    // Bind the socket to the server address
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
-        perror("Error al vincular el socket a la dirección");
-        exit(1);
+        perror("Error binding socket");
+        exit(EXIT_FAILURE);
     }
 
-    // Escuchar por conexiones entrantes
+    // Listen for incoming connections
     if (listen(server_socket, 5) == -1)
     {
-        perror("Error al escuchar por conexiones entrantes");
-        exit(1);
+        perror("Error listening for connections");
+        exit(EXIT_FAILURE);
     }
 
-    printf("El servidor está esperando conexiones...\n");
+    printf("Server listening on port %d...\n", port);
 
+    // Accept incoming connections
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
+    int client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_addr_len);
+    if (client_socket == -1)
+    {
+        perror("Error accepting connection");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Client connected\n");
+
+    // Loop to receive and respond to messages from the client
     while (1)
     {
-        // Aceptar una conexión entrante
-        int client_socket = accept(server_socket, NULL, NULL);
-        if (client_socket == -1)
-        {
-            perror("Error al aceptar la conexión del cliente");
-            exit(1);
-        }
-
-        // Leer el nombre del archivo de imagen enviado por el cliente
-        char filename[MAX_FILENAME_LEN];
-        int filename_len = recv(client_socket, filename, sizeof(filename), 0);
-        if (filename_len == -1)
-        {
-            perror("Error al recibir el nombre del archivo");
-            exit(1);
-        }
-
-        // Construir la ruta completa para guardar la imagen en "processed images"
-        char filepath[MAX_PATH_LEN];
-        snprintf(filepath, sizeof(filepath), "processed images/%s", filename);
-
-        // Abrir un archivo para guardar la imagen recibida
-        FILE *file = fopen(filepath, "wb");
-        if (file == NULL)
-        {
-            perror("Error al abrir el archivo para escribir la imagen");
-            exit(1);
-        }
-
-        // Recibir y guardar la imagen
         char buffer[1024];
-        int bytes_received;
-        while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0)
+        ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+        if (bytes_received == -1)
         {
-            fwrite(buffer, 1, bytes_received, file);
+            perror("Error receiving data");
+            exit(EXIT_FAILURE);
         }
 
-        // Cerrar el archivo
-        fclose(file);
+        if (bytes_received == 0)
+        {
+            // Client has disconnected
+            printf("Client disconnected\n");
+            break;
+        }
 
-        // Enviar una respuesta al cliente
-        char response[] = "Imagen recibida con éxito";
+        buffer[bytes_received] = '\0';
+        printf("Received message from client: %s\n", buffer);
+
+        // Send a response back to the client
+        char response[2048]; // Increased buffer size
+        snprintf(response, sizeof(response), "Server received: %s", buffer);
         if (send(client_socket, response, strlen(response), 0) == -1)
         {
-            perror("Error al enviar respuesta al cliente");
-            exit(1);
+            perror("Error sending response");
+            exit(EXIT_FAILURE);
         }
 
-        // Cerrar la conexión con el cliente
-        close(client_socket);
+        printf("Response sent to client: %s\n", response);
     }
 
-    // Cerrar el socket del servidor (esto generalmente no se alcanza en un servidor en funcionamiento)
+    // Close the client socket
+    close(client_socket);
+
+    // Close the server socket
     close(server_socket);
 
     return 0;
