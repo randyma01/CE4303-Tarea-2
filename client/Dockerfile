@@ -11,6 +11,7 @@ COPY client-r.c /app
 RUN apk update && apk add gcc libc-dev
 RUN gcc client-r.c -o client-r
 
+# Make port 1717 available to the world outside this container
 EXPOSE 1717
 
 # Set the entry point

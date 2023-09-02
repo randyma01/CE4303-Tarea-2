@@ -11,3 +11,8 @@ El código mostrado a continuación es la solución del **Tarea 2: Serviciosy vi
 
 - Semestre II - 2023
 
+
+## Ejecutat el proyecto 🖥️
+
+TODO: pendiente...
+
