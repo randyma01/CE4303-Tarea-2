@@ -1,0 +1,19 @@
+TODO: research
+
+1. C programming:
+    1.2 .h (header files)
+    1.2 .c (c code files)
+    2.3 .o ()
+2. makefiles 
+3. .sh files
+
+---------------
+TODO: steops to work on 
+
+1. fix C client code
+2. create docker image and container
+    2.1 execute: docker to local machine
+    2.2 execute: docker to remote machine
+    2.3
+3. make server
+4. docs
