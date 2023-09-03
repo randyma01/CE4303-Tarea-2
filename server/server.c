@@ -11,7 +11,7 @@
 bool receiveFile(int socket)
 {
 
-    printf("receiveFile SENTINEL");
+    printf("receiveFile SENTINEL\n");
     char buffer[1024];
     ssize_t bytesRead;
     char filePath[1024];
@@ -126,7 +126,7 @@ int main()
         printf("Client connected\n");
 
         // Receive and save the file from the client
-        printf("receiveFile SENTINEL - 1");
+        printf("main SENTINEL\n");
 
         bool success = receiveFile(client_socket);
 
