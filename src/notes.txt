@@ -45,3 +45,9 @@ En resumen, la inclusión de -lpthread es esencial para garantizar que el servid
 
 https://stackabuse.com/bytes/how-to-kill-a-process-using-a-port-in-linux/
 lsof -i :1717 -t
+
+
+docker build -t cliente-app .
+
+docker run -it --network host cliente-app
+
