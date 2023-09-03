@@ -4,8 +4,10 @@ TODO: research
     1.2 .h (header files) 
     1.2 .c (c code files)
     2.3 .o (obj files)
-2. Makefile or makefile
+
+2. Makefile or makefile ✅
     2.1 compile C code
+
 3. .sh files
     3.1 automated all
     + invoque Makefile
@@ -14,7 +16,9 @@ TODO: research
 TODO: steps client 
 
 1. fix C client code
+
 2. create Makefile
+
 2. create docker image and container
     2.1 execute: docker to local machine
     2.2 execute: docker to remote machine
