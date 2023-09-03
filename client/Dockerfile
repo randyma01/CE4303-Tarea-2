@@ -9,8 +9,10 @@ RUN apk update && \
 # Copy the client source code into the container
 COPY client.c /app/client.c
 
-# Compile the client inside the container
+# Set the working directory
 WORKDIR /app
+
+# Compile the client inside the container
 RUN gcc -o client client.c
 
 # Expose port 1717 to the world

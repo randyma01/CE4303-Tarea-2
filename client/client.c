@@ -23,8 +23,8 @@ void sendFile(FILE *file, int socket)
 int main()
 {
     // Define the server and port to connect to
-    char *server_ip = "127.0.0.1"; // Use "localhost" or "127.0.0.1" for local connection
-    int port = 1717;               // Change 1717 to the port you want to use
+    char *server_ip = "172.19.110.38"; // Use "localhost" or "127.0.0.1" for local connection
+    int port = 1717;                   // Change 1717 to the port you want to use
 
     // Create a socket
     int client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -97,16 +97,33 @@ int main()
         fclose(file);
 
         // Receive a response from the server
-        char response[1024];
-        ssize_t bytes_received = recv(client_socket, response, sizeof(response), 0);
-        if (bytes_received == -1)
+        // char response[1024];
+        // ssize_t bytes_received = recv(client_socket, response, sizeof(response), 0);
+        // if (bytes_received == -1)
+        // {
+        //     perror("Error receiving response");
+        //     exit(EXIT_FAILURE);
+        // }
+
+        // response[bytes_received] = '\0';
+        // printf("Received response: %s\n", response);
+
+        // Ask the user if they want to send another file
+        printf("Do you want to send another file? (yes/no): ");
+        char answer[10];
+        fgets(answer, sizeof(answer), stdin);
+
+        // Remove the newline character at the end of the answer
+        len = strlen(answer);
+        if (len > 0 && answer[len - 1] == '\n')
         {
-            perror("Error receiving response");
-            exit(EXIT_FAILURE);
+            answer[len - 1] = '\0';
         }
 
-        response[bytes_received] = '\0';
-        printf("Received response: %s\n", response);
+        if (strcasecmp(answer, "no") == 0)
+        {
+            break;
+        }
     }
 
     // Close the socket
