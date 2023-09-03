@@ -1,18 +1,20 @@
-# Use a lightweight base image
+# Use a base Alpine Linux image
 FROM alpine:latest
 
-# Set the working directory
+# Install necessary dependencies and build tools
+RUN apk update && \
+    apk add --no-cache gcc g++ make libc-dev && \
+    rm -rf /var/cache/apk/*
+
+# Copy the client source code into the container
+COPY client.c /app/client.c
+
+# Compile the client inside the container
 WORKDIR /app
+RUN gcc -o client client.c
 
-# Copy the client code into the container
-COPY client-r.c /app
-
-# Compile the client code
-RUN apk update && apk add gcc libc-dev
-RUN gcc client-r.c -o client-r
-
-# Make port 1717 available to the world outside this container
+# Expose port 1717 to the world
 EXPOSE 1717
 
-# Set the entry point
-ENTRYPOINT ["./client-r"]
+# Default command to run the client
+CMD ["./client"]

@@ -10,6 +10,8 @@
 // Function to receive a file from the client and save it
 bool receiveFile(int socket)
 {
+
+    printf("receiveFile SENTINEL");
     char buffer[1024];
     ssize_t bytesRead;
     char filePath[1024];
@@ -27,7 +29,8 @@ bool receiveFile(int socket)
     // Check if the user wants to exit
     if (strcasecmp(filePath, "exit") == 0)
     {
-        return true; // Exit the function and indicate client to exit
+        close(socket);
+        return false; // Exit the function and indicate client to exit
     }
 
     // Create the 'imgs' folder if it doesn't exist
@@ -123,34 +126,32 @@ int main()
         printf("Client connected\n");
 
         // Receive and save the file from the client
+        printf("receiveFile SENTINEL - 1");
+
         bool success = receiveFile(client_socket);
 
-        // Send a response back to the client
-        if (success)
+        // Check if the received message is 'exit'
+        if (!success)
         {
-            char response[] = "File received successfully. You can send another image.";
-            if (send(client_socket, response, strlen(response), 0) == -1)
-            {
-                perror("Error sending response");
-                exit(EXIT_FAILURE);
-            }
+            break; // Exit the loop if 'exit' is received
         }
-        else
+
+        // Send a response back to the client
+        char response[] = "File received successfully. You can send another image.";
+        if (send(client_socket, response, strlen(response), 0) == -1)
         {
-            char response[] = "Error receiving file. Please try again.";
-            if (send(client_socket, response, strlen(response), 0) == -1)
-            {
-                perror("Error sending response");
-                exit(EXIT_FAILURE);
-            }
+            perror("Error sending response");
+            exit(EXIT_FAILURE);
         }
 
         // Close the client socket
         close(client_socket);
     }
 
-    // Close the server socket (never reached in this example)
+    // Close the server socket
     close(server_socket);
+
+    printf("Server exiting...\n");
 
     return 0;
 }

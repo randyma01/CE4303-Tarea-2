@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # compile the client with Makefile
-echo 'execute the client Makefile'
+echo 'Executing the client Makefile...'
 make clean
 make client
 
 # executing the client
-echo 'execute the client itself'
+echo 'Executing the client code...'
 ./client
