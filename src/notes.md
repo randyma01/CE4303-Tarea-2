@@ -32,8 +32,23 @@ https://stackabuse.com/bytes/how-to-kill-a-process-using-a-port-in-linux/
 
 
 #### Run Docker Locallly
-    $ docker build -t cliente-app .
-    $ docker run -it --network host cliente-app
+
+**Running only client in local**
+    $ docker build -t client-app .
+    $ docker run -it --network host client-app
+
+**Running only server in local**
+    $ docker build -t server-app .
+    $ docker run -it -p 1717:1717 server-app
+
+**Running both in local**
+    $ docker network create mynetwork
+    $ docker run -it -p 1717:1717 --network mynetwork servidor-app
+    $ docker run -it --network mynetwork cliente-app
+
+**Running client in local and server in remote VM**
+    $ docker build -t client-app-msg .
+    $ docker run -it client-app ./client 20.163.149.207 1717
 
 #### Azure VM
 

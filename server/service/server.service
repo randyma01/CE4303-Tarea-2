@@ -1,0 +1,21 @@
+[Unit]
+Description=ImageServer Daemon
+
+[Service]
+Type=simple
+
+ExecStart=/home/ranmsy/GitHub/CE4303-Tarea-2/test/Server3
+
+ExecReload=/home/ranmsy/GitHub/CE4303-Tarea-2/test/kill -HUP $MAINPID
+
+ExecStop= /home/ranmsy/GitHub/CE4303-Tarea-2/test/kill -2 $MAINPID
+
+User=root
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+sudo systemctl start ImageServerDaemon
+sudo systemctl status ImageServerDaemon

@@ -8,7 +8,7 @@
 int main()
 {
     // Define the server and port to connect to
-    char *server_ip = "172.19.110.38"; // Use "localhost" or "127.0.0.1" for local connection
+    char *server_ip = "172.19.110.38"; // // 172.19.110.38 -> WSL || 20.163.149.207 -> remote Azure VM
     int port = 1717;                   // Change 1717 to the port you want to use
 
     // Create a socket
