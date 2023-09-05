@@ -18,34 +18,84 @@ const char* determinarColorPredominante(const char* filename) {
         return "Desconocido";
     }
 
+    cv::Mat blurred;
+    cv::GaussianBlur(image, blurred, cv::Size(5, 5), 0);
+
     cv::Mat hsvImage;
-    cv::cvtColor(image, hsvImage, cv::COLOR_BGR2HSV);
+    cv::cvtColor(blurred, hsvImage, cv::COLOR_BGR2HSV);
 
-    cv::Scalar lowerRed = cv::Scalar(0, 100, 100);
-    cv::Scalar upperRed = cv::Scalar(10, 255, 255);
-
-    cv::Scalar lowerGreen = cv::Scalar(35, 100, 100);
-    cv::Scalar upperGreen = cv::Scalar(85, 255, 255);
-
-    cv::Scalar lowerBlue = cv::Scalar(100, 100, 100);
+    cv::Scalar lowerBlue = cv::Scalar(90, 50, 50);
     cv::Scalar upperBlue = cv::Scalar(130, 255, 255);
 
-    cv::Mat maskRed, maskGreen, maskBlue;
-    cv::inRange(hsvImage, lowerRed, upperRed, maskRed);
-    cv::inRange(hsvImage, lowerGreen, upperGreen, maskGreen);
+    cv::Scalar lowerGreen = cv::Scalar(35, 50, 50);
+    cv::Scalar upperGreen = cv::Scalar(85, 255, 255);
+
+    cv::Scalar lowerRed1 = cv::Scalar(0, 50, 50);
+    cv::Scalar upperRed1 = cv::Scalar(10, 255, 255);
+    cv::Scalar lowerRed2 = cv::Scalar(160, 50, 50);
+    cv::Scalar upperRed2 = cv::Scalar(180, 255, 255);
+
+    cv::Mat maskBlue, maskGreen, maskRed;
     cv::inRange(hsvImage, lowerBlue, upperBlue, maskBlue);
+    cv::inRange(hsvImage, lowerGreen, upperGreen, maskGreen);
+    cv::inRange(hsvImage, lowerRed1, upperRed1, maskRed);
+    cv::inRange(hsvImage, lowerRed2, upperRed2, maskRed);
+    cv::bitwise_or(maskRed, maskRed, maskRed);
 
     int redPixels = cv::countNonZero(maskRed);
     int greenPixels = cv::countNonZero(maskGreen);
     int bluePixels = cv::countNonZero(maskBlue);
 
     if (redPixels > greenPixels && redPixels > bluePixels) {
-        return "images/rojos";
+        return "images/rojas";
     } else if (greenPixels > redPixels && greenPixels > bluePixels) {
         return "images/verdes";
     } else {
         return "images/azules";
     }
+}
+
+// Función para aplicar la ecualización de histograma a una imagen y sobrescribir la imagen de entrada
+void ecualizarHistograma(const char* inputImagePath) {
+    cv::Mat image = cv::imread(inputImagePath, cv::IMREAD_COLOR);
+
+    if (image.empty()) {
+        printf("No se pudo cargar la imagen.\n");
+        return;
+    }
+
+    cv::Mat imageGray;
+    cv::cvtColor(image, imageGray, cv::COLOR_BGR2GRAY);
+
+    cv::Mat equalizedImage;
+    cv::equalizeHist(imageGray, equalizedImage);
+
+    cv::imwrite(inputImagePath, equalizedImage); // Sobrescribe la imagen de entrada
+    printf("Imagen con histograma ecualizado en: %s\n", inputImagePath);
+}
+
+void* procesarImagen(void* arg) {
+    const char* filename = (const char*)arg;
+
+    // Determinar el color predominante
+    const char* colorPredominante = determinarColorPredominante(filename);
+    printf("Color predominante: %s\n", colorPredominante);
+
+    char command[100];
+    snprintf(command, sizeof(command), "mv %s %s/", filename, colorPredominante);
+    system(command);
+
+    size_t len = strlen(colorPredominante) + 1 + strlen(filename) + 1;
+    char result[len];
+    strcpy(result, colorPredominante);
+
+    strcat(result, "/");
+
+    strcat(result, filename);
+
+    ecualizarHistograma(result);
+
+    return NULL;
 }
 
 int main() {
@@ -93,7 +143,7 @@ int main() {
         FILE *image_file;
         int bytes_received, total_bytes_received = 0;
         char filename[50];
-        sprintf(filename, "images/imagen_%d.jpg", ntohs(client_addr.sin_port)); // Generar un nombre único para la imagen
+        sprintf(filename, "imagen_%d.jpg", ntohs(client_addr.sin_port)); // Generar un nombre único para la imagen
 
         image_file = fopen(filename, "wb"); // Abrir archivo en modo escritura binaria
 
@@ -110,14 +160,17 @@ int main() {
 
         fclose(image_file);
         printf("Imagen recibida y guardada como %s (%d bytes)\n", filename, total_bytes_received);
-
-        // Determinar el color predominante
-        const char* colorPredominante = determinarColorPredominante(filename);
-        printf("Color predominante: %s\n", colorPredominante);
         
-        char command[100];
-        snprintf(command, sizeof(command), "mv %s %s/", filename, colorPredominante);
-    	system(command);
+        // Crear un hilo para procesar la imagen
+        pthread_t thread;
+        if (pthread_create(&thread, NULL, procesarImagen, (void*)filename) != 0) {
+            perror("Error al crear el hilo");
+            close(client_fd);
+            continue;
+        }
+
+        pthread_detach(thread); // Liberar recursos cuando el hilo termine
+
 
         close(client_fd);
     }

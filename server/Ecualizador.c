@@ -1,26 +1,28 @@
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
 
-int main() {
-    // Cargar la imagen
-    IplImage* image = cvLoadImage("imagen.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+// Función para aplicar la ecualización de histograma a una imagen y sobrescribir la imagen de entrada
+void ecualizarHistogramaYGuardar(const char* inputImagePath) {
+    cv::Mat image = cv::imread(inputImagePath, cv::IMREAD_COLOR);
 
-    // Verificar si la imagen se ha cargado correctamente
-    if (!image) {
+    if (image.empty()) {
         printf("No se pudo cargar la imagen.\n");
-        return -1;
+        return;
     }
 
-    // Realizar la equalización de histogramas
-    cvEqualizeHist(image, image);
+    cv::Mat imageGray;
+    cv::cvtColor(image, imageGray, cv::COLOR_BGR2GRAY);
 
-    // Guardar la imagen igualada
-    cvSaveImage("equalized_image.jpg", image);
+    cv::Mat equalizedImage;
+    cv::equalizeHist(imageGray, equalizedImage);
 
-    // Liberar la memoria
-    cvReleaseImage(&image);
+    cv::imwrite(inputImagePath, equalizedImage); // Sobrescribe la imagen de entrada
+    printf("Imagen con histograma ecualizado sobrescrita en: %s\n", inputImagePath);
+}
 
-    printf("Imagen equalizada y guardada como 'equalized_image.jpg'.\n");
+int main() {
+    const char* inputImagePath = "prueba.jpg"; // Ruta de la imagen de entrada
+
+    ecualizarHistogramaYGuardar(inputImagePath);
 
     return 0;
 }
