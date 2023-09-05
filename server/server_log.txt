@@ -1,0 +1,10 @@
+[2023-09-05 12:41:05] Cliente: 127.0.0.1:59640 - Conexión establecida
+[2023-09-05 12:41:15] Cliente: Desconocido - Procesamiento de imagen iniciado
+[2023-09-05 13:05:03] Cliente: 127.0.0.1:54892 - Conexión establecida
+[2023-09-05 13:05:11] Cliente: Desconocido - Procesamiento de imagen iniciado
+[2023-09-05 13:14:11] Cliente: 127.0.0.1:56532 - Conexión establecida
+[2023-09-05 13:14:30] Cliente: 56532 - Procesamiento de imagen iniciado
+[2023-09-05 13:18:30] Cliente: 127.0.0.1:38482 - Conexión establecida
+[2023-09-05 13:18:35] Cliente: 127.0.0.1:38482 - Procesamiento de imagen iniciado
+[2023-09-05 13:25:29] Cliente: 127.0.0.1:46312 - Conexión establecida
+[2023-09-05 13:25:36] Cliente: 127.0.0.1:46312 - Procesamiento de imagen iniciado

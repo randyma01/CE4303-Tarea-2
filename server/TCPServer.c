@@ -1,13 +1,33 @@
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <pthread.h>
 
 #define PORT 1717
 #define BUFFER_SIZE 1024
+
+void logActivity(const char* clientAddress, const char* action) {
+    time_t current_time;
+    struct tm* time_info;
+    char time_str[30];
+
+    time(&current_time);
+    time_info = localtime(&current_time);
+
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", time_info);
+
+    FILE* log_file = fopen("server_log.txt", "a");
+
+    if (log_file != NULL) {
+        fprintf(log_file, "[%s] Cliente: %s - %s\n", time_str, clientAddress, action);
+        fclose(log_file);
+    }
+}
 
 // Función para determinar el color predominante en la imagen
 const char* determinarColorPredominante(const char* filename) {
@@ -74,12 +94,21 @@ void ecualizarHistograma(const char* inputImagePath) {
     printf("Imagen con histograma ecualizado en: %s\n", inputImagePath);
 }
 
+struct ThreadArgs {
+    const char* filename;
+    const char* client_port;
+};
 void* procesarImagen(void* arg) {
-    const char* filename = (const char*)arg;
+    struct ThreadArgs* args = (struct ThreadArgs*)arg;
+    const char* filename = args->filename;
+    const char* client_port = args->client_port;
 
     // Determinar el color predominante
     const char* colorPredominante = determinarColorPredominante(filename);
     printf("Color predominante: %s\n", colorPredominante);
+    
+    // Registrar el procesamiento de la imagen con el puerto del cliente en el archivo de registro
+    logActivity(client_port, "Procesamiento de imagen iniciado");
 
     char command[100];
     snprintf(command, sizeof(command), "mv %s %s/", filename, colorPredominante);
@@ -135,6 +164,13 @@ int main() {
             perror("Error al aceptar la conexión del cliente");
             continue;
         }
+        
+        unsigned short client_port = ntohs(client_addr.sin_port);
+        // Registrar la conexión del cliente en el archivo de registro
+    	char client_info[30];
+    	snprintf(client_info, sizeof(client_info), "%s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    	logActivity(client_info, "Conexión establecida");
+
 
         printf("Cliente conectado desde %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
@@ -161,13 +197,17 @@ int main() {
         fclose(image_file);
         printf("Imagen recibida y guardada como %s (%d bytes)\n", filename, total_bytes_received);
         
-        // Crear un hilo para procesar la imagen
-        pthread_t thread;
-        if (pthread_create(&thread, NULL, procesarImagen, (void*)filename) != 0) {
-            perror("Error al crear el hilo");
-            close(client_fd);
-            continue;
-        }
+        // Crear un hilo para procesar la imagen y pasar la estructura ThreadArgs como argumento
+    	pthread_t thread;
+    	struct ThreadArgs thread_args;
+    	thread_args.filename = filename;
+    	thread_args.client_port = client_info;
+
+    	if (pthread_create(&thread, NULL, procesarImagen, (void*)&thread_args) != 0) {
+        	perror("Error al crear el hilo");
+        	close(client_fd);
+        	continue;
+    	}
 
         pthread_detach(thread); // Liberar recursos cuando el hilo termine
 
