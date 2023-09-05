@@ -106,9 +106,6 @@ void* procesarImagen(void* arg) {
     // Determinar el color predominante
     const char* colorPredominante = determinarColorPredominante(filename);
     printf("Color predominante: %s\n", colorPredominante);
-    
-    // Registrar el procesamiento de la imagen con el puerto del cliente en el archivo de registro
-    logActivity(client_port, "Procesamiento de imagen iniciado");
 
     char command[100];
     snprintf(command, sizeof(command), "mv %s %s/", filename, colorPredominante);
@@ -123,6 +120,10 @@ void* procesarImagen(void* arg) {
     strcat(result, filename);
 
     ecualizarHistograma(result);
+    
+    // Registrar el procesamiento de la imagen con el puerto del cliente en el archivo de registro
+    logActivity(client_port, "Procesamiento de imagen iniciado");
+    logActivity(client_port, result);
 
     return NULL;
 }
